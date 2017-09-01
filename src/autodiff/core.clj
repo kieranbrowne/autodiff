@@ -1,4 +1,5 @@
-(ns autodiff.core)
+(ns autodiff.core
+  (:refer-clojure :exclude [* + - /]))
 
 (defprotocol AutoDiff
   (+ [u v])
@@ -6,9 +7,10 @@
   (* [u v])
   )
 
-(defmacro destruct [content]
+(defmacro destruct
+  [content]
   `(let ~[{'u :f 'u' :f' :or {'u 'u 'u' 0}} 'u
-         {'v :f 'v' :f' :or {'v 'v 'v' 0}} 'v]
+          {'v :f 'v' :f' :or {'v 'v 'v' 0}} 'v]
      ~content))
 
 
@@ -30,12 +32,4 @@
   (+ [u v] (clojure.core/+ u v))
   (- [u v] (clojure.core/- u v))
   (* [u v] (clojure.core/* u v))
-
     )
-
-
-
-(defn sq [x] (* x (+ x 0)))
-
-(sq (Dual. 3 1))
-(sq 3)
