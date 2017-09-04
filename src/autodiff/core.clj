@@ -1,12 +1,13 @@
 (ns autodiff.core
-  ;; (:refer-clojure :exclude [* + - /])
+  (:refer-clojure :exclude [* + - /])
   )
 
 (defprotocol AutoDiff
   (add [u v])
   (sub [u v])
   (mul [u v])
-  (const [u])
+  (negate [u])
+  (to-num [u])
   )
 
 (defmacro destruct
@@ -28,25 +29,89 @@
   (mul [u v]
     (destruct
       (Dual. (mul u v) (add (mul u' v) (mul u v')))))
+
+  ;; (negate [u] (update (Dual. 6 3) :f clojure.core/-))
   )
 
-(extend-type java.lang.Number
-  AutoDiff
-  (add [u v] (clojure.core/+ u v))
-  (sub [u v] (clojure.core/- u v))
-  (mul [u v] (clojure.core/* u v))
-  (const [u] (Dual. u 1))
-    )
+(defn coerce
+  "Makes value a Dual if not already"
+  [x]
+  (if (= (str (type x)) "class autodiff.core.Dual")
+    x (->Dual x 0)))
 
 
-(defn * [& args] (reduce mul args))
-(defn + [& args] (reduce add args))
-(defn - [& args] (reduce sub args))
+(defmacro extend-types [ts & specs]
+  (conj (into '() (map (fn [type]
+                     (into specs [type 'extend-type]))
+                   ts)) 'do))
+
+(extend-types
+ [java.lang.Number
+  java.lang.Long
+  java.lang.Double]
+
+ AutoDiff
+
+ (add [a b]
+  (if (and (number? a) (number? b))
+    (clojure.core/+ a b)
+    (add (coerce a) (coerce b))))
+ (sub [a b]
+      (if (and (number? a) (number? b))
+        (clojure.core/- a b)
+        (sub (coerce a) (coerce b))))
+ (mul [a b]
+      (if (and (number? a) (number? b))
+        (clojure.core/* a b)
+        (mul (coerce a) (coerce b))))
+ )
+
+
 
 (defn exp [n pow]
   (reduce mul (repeat pow n)))
+
 
 (defn d
   "Find the first derivative of a function"
   [f & args]
   (apply f (map #(Dual. % 1) args)))
+
+
+
+
+;; Math operators
+
+(defn +
+  "Replace clojure.core/+"
+  ([] 0)
+  ([a] a)
+  ([a b]
+   (if (and (number? a) (number? b))
+     (clojure.core/+ a b)
+     (add a b)))
+  ([a b & more]
+   (reduce + (+ a b) more)))
+
+
+(defn -
+  "Replace clojure.core/-"
+  ([a] (negate a))
+  ([a b]
+   (if (and (number? a) (number? b))
+     (clojure.core/- a b)
+     (sub a b)))
+  ([a b & more]
+   (reduce - (- a b) more)))
+
+
+
+(defn *
+  "Replace clojure.core/-"
+  ([a] (negate a))
+  ([a b]
+   (if (and (number? a) (number? b))
+     (clojure.core/* a b)
+     (mul a b)))
+  ([a b & more]
+   (reduce * (* a b) more)))
