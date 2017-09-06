@@ -2,71 +2,73 @@
   (:refer-clojure :exclude  [* + - /])
   ;; (:import [autodiff.core Dual])
   (:require [clojure.test :refer :all]
-            [autodiff.core :refer :all]))
+            [autodiff.core :refer :all]
+            [autodiff.protocols :refer :all]
+            ))
+
+
 
 
 (deftest basic
   (testing "Simple quadratic"
-    (is (= 6 (:f' (#(* % %) (autodiff.core.Dual. 3 1)))))))
+    (is (= 6 (:f' (#(* % %) (->Dual 3 1)))))))
 
 
 (deftest associativity
 
-  (testing "2 * (Dual. 6 1) = (Dual. 6 1) * 2"
-    (is (= (* (autodiff.core.Dual. 6 1) 2)
-           (* 2 (autodiff.core.Dual. 6 1))
+  (testing "2 * (Dual 6 1) = (Dual 6 1) * 2"
+    (is (= (* (->Dual 6 1) 2)
+           (* 2 (->Dual 6 1))
            )))
 
   (testing "> 2 arguments"
-    (is (= (+ 4 (autodiff.core.Dual. 6 1) 2)
-           (+ 2 4 (autodiff.core.Dual. 6 1))
-           (+ (autodiff.core.Dual. 6 1) 2 4)
-           (autodiff.core.Dual. 12 1)
+    (is (= (+ 4 (->Dual 6 1) 2)
+           (+ 2 4 (->Dual 6 1))
+           (+ (->Dual 6 1) 2 4)
+           (->Dual 12 1)
            )))
   )
-
 
 
 (deftest quadratics
   (let [f ; f(x) = 4x^2 + 3
         (fn [x] (+ (* (* x x) 4) 3))
         g ; g(x) = -2x^3 - 2
-        (fn [x] (+ -2 (* -2 (exp x 3))))
+        (fn [x] (+ -2 (* -2 (reduce * (repeat 3 x)))))
         ]
 
     (testing "f(x) = 4x^2 + 3 where x = 3"
-      (is (= (new autodiff.core.Dual 39 24)
-           (f (autodiff.core.Dual. 3 1)))))
+      (is (= (->Dual 39 24)
+           (f (->Dual 3 1)))))
 
     (testing "f(x) = 4x^2 + 3 where x = 0"
-      (is (= (new autodiff.core.Dual 3 0)
-             (f (autodiff.core.Dual. 0 1)))))
+      (is (= (->Dual 3 0)
+             (f (->Dual 0 1)))))
 
     (testing "f(x) = 4x^2 + 3 where x = -1"
-      (is (= (new autodiff.core.Dual 7 -8)
-             (f (autodiff.core.Dual. -1 1)))))
+      (is (= (->Dual 7 -8)
+             (f (->Dual -1 1)))))
 
     (testing "g(x) = -2x^3 - 2 where x = 2"
-      (is (= (new autodiff.core.Dual -18 -24)
-             (g (autodiff.core.Dual. 2 1)))))
+      (is (= (->Dual -18 -24)
+             (g (->Dual 2 1)))))
 
     (testing "g(x) = -2x^3 - 2 where x = -2"
-      (is (= (new autodiff.core.Dual 14 -24)
-             (g (autodiff.core.Dual. -2 1)))))
+      (is (= (->Dual 14 -24)
+             (g (->Dual -2 1)))))
 
     (testing "g(x) = -2x^3 - 2 where x = 0"
-      (is (= (new autodiff.core.Dual -2 0)
-             (g (autodiff.core.Dual. 0 1)))))
+      (is (= (->Dual -2 0)
+             (g (->Dual 0 1)))))
 
     (testing "(f.g)(x) = f comp g where x = 1"
-      (is (= (new autodiff.core.Dual 67 192)
-             ((comp f g) (autodiff.core.Dual. 1 1)))))
+      (is (= (->Dual 67 192)
+             ((comp f g) (->Dual 1 1)))))
 
     (testing "(f.g)(x) = f comp g where x = -2"
-      (is (= (new autodiff.core.Dual 787 -2688)
-             ((comp f g) (autodiff.core.Dual. -2 1)))))
+      (is (= (->Dual 787 -2688)
+             ((comp f g) (->Dual -2 1)))))
 
     (testing "(f.g)(x) = f comp g where x = 0.5"
-      (is (= (new autodiff.core.Dual 23.25 27.0)
-             ((comp f g) (autodiff.core.Dual. 0.5 1)))))
+      (is (= (->Dual 23.25 27.0) ((comp f g) (->Dual 0.5 1)))))
     ))
