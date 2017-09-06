@@ -29,7 +29,12 @@
       (if (and (number? a) (number? b))
         (clojure.core/* a b)
         (ad/mul (ad/coerce a) (ad/coerce b))))
+ (negate [a] (clojure.core/- a))
+ (sin [a] (Math/sin a))
+ (cos [a] (Math/cos a))
  )
+
+(Math/sin 2)
 
 
 (defn d
