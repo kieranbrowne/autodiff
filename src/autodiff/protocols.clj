@@ -31,6 +31,20 @@
   (logbase [u v])
   )
 
+(defrecord Dual
+    [f f'])
+
+(extend-type java.lang.Long
+  AutoDiff
+  (constant [a] a)
+  )
+
+(defn coerce
+  "Makes value a Dual if not already"
+  ([x v]
+   (if (= (str (type x)) "class autodiff.protocols.Dual")
+     x (->Dual x (constant v))))
+  ([x] (coerce x 0)))
 
 (defmacro destruct-unary
   "Simpler let bindings for autodiff of Dual record type"
@@ -41,12 +55,12 @@
 (defmacro destruct-binary
   "Simpler let bindings for autodiff of Dual record type"
   [content]
-  `(let ~[{'u :f 'u' :f' :or {'u 'u 'u' 0}} 'u
-          {'v :f 'v' :f' :or {'v 'v 'v' 0}} 'v]
+  `(let ~[{'u :f 'u' :f'} '(coerce u)
+          {'v :f 'v' :f'} '(coerce v)]
      ~content))
 
-(defrecord Dual
-    [f f']
+
+(extend-type Dual
   AutoDiff
   (constant [u]
     (destruct-unary
@@ -71,14 +85,6 @@
      (Dual. (cos u) (negate (mul u' (sin u))))))
   (pi [type-like] (Dual. (pi type-like) 0))
   )
-
-
-(defn coerce
-  "Makes value a Dual if not already"
-  ([x v]
-   (if (= (str (type x)) "class autodiff.protocols.Dual")
-     x (->Dual x (constant v))))
-  ([x] (coerce x 0)))
 
 
 (defn d
