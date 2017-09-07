@@ -4,7 +4,8 @@
   (:require [clojure.test :refer :all]
             [autodiff.core :refer :all]
             [autodiff.protocols :refer :all]
-            ))
+
+            [autodiff.protocols :as ad]))
 
 
 
@@ -29,6 +30,15 @@
            )))
   )
 
+(deftest ops
+  (testing "derivative of constant"
+    (is (= 0 (d constant 3))))
+  (testing "derivative of add where one is variable"
+    (is (= 1 (d add 3 (->Dual 2 0)))))
+  (testing "derivative of add (assumes both are variable)"
+    (is (= 2 (d add 3 2))))
+  )
+(d add 3 (->Dual 2 0))
 
 (deftest quadratics
   (let [f ; f(x) = 4x^2 + 3

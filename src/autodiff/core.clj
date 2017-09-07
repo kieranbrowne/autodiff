@@ -17,6 +17,7 @@
 
  AutoDiff
 
+ (constant [a] a)
  (add [a b]
       (if (and (number? a) (number? b))
         (clojure.core/+ a b)
@@ -33,15 +34,6 @@
  (sin [a] (Math/sin a))
  (cos [a] (Math/cos a))
  )
-
-(Math/sin 2)
-
-
-(defn d
-  "Find the first derivative of a function"
-  [f & args]
-  (:f'
-   (apply f (map #(->Dual % 1) args))))
 
 
 

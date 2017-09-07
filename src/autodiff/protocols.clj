@@ -1,6 +1,7 @@
 (ns autodiff.protocols)
 
 (defprotocol AutoDiff
+  (constant [u] "Create a constant of value u")
   (add [u v] "Add two values")
   (sub [u v] "Subtract two values")
   (mul [u v] "Multiply two values")
@@ -47,6 +48,9 @@
 (defrecord Dual
     [f f']
   AutoDiff
+  (constant [u]
+    (destruct-unary
+     (Dual. (constant u) (constant 0))))
   (add [u v]
     (destruct-binary
       (Dual. (add u v) (add u' v'))))
@@ -69,10 +73,15 @@
   )
 
 
-
-
 (defn coerce
   "Makes value a Dual if not already"
-  [x]
-  (if (= (str (type x)) "class autodiff.protocols.Dual")
-    x (->Dual x 0)))
+  ([x v]
+   (if (= (str (type x)) "class autodiff.protocols.Dual")
+     x (->Dual x (constant v))))
+  ([x] (coerce x 0)))
+
+
+(defn d
+  "Find the first derivative of a function"
+  [f & args]
+  (:f' (apply f (map #(coerce % 1) args))))
