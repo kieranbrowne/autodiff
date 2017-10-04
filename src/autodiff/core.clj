@@ -30,11 +30,35 @@
       (if (and (number? a) (number? b))
         (clojure.core/* a b)
         (ad/mul (ad/coerce a) (ad/coerce b))))
+ (div [a b]
+      (if (and (number? a) (number? b))
+        (clojure.core// a b)
+        (ad/mul (ad/coerce a) (ad/coerce b))))
+ (pow [a b]
+      (if (and (number? a) (number? b))
+        (Math/pow a b)
+        (ad/pow (ad/coerce a) (ad/coerce b))))
+ (log [a] (Math/log a))
  (negate [a] (clojure.core/- a))
  (sin [a] (Math/sin a))
  (cos [a] (Math/cos a))
  )
 
+
+;; (ad/pow 2 2)
+
+;; (ad/d ad/add 1 2)
+;; (ad/d ad/pow 3 2)
+
+(let [x (ad/constant 4)
+      y (ad/constant 8)
+      z (reduce ad/mul (repeat y x))]
+  (ad/d ad/pow (ad/->Dual x 1) y)
+  )
+
+(Math/pow 2 2)
+(ad/pow (ad/coerce 2) 2)
+(ad/coerce 3)
 
 
 ;; Math operators

@@ -31,6 +31,7 @@
   (logbase [u v])
   )
 
+
 (defrecord Dual
     [f f'])
 
@@ -77,6 +78,16 @@
   (div [u v]
     (destruct-binary
      (Dual. (div u v) (div (sub (mul u' v) (mul u v')) (mul v v)))))
+  (log [u]
+    (destruct-unary
+     (Dual. (log u) (div u' u))))
+  (pow [u v]
+    (destruct-binary
+     (Dual. (pow u v)
+            (mul (pow u v)
+                 (add (mul v' (log u))
+                      (div (mul v u') u)
+                      )))))
   (sin [u]
     (destruct-unary
      (Dual. (sin u) (mul u' (cos u)))))

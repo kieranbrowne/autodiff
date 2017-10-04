@@ -5,7 +5,8 @@
             [autodiff.core :refer :all]
             [autodiff.protocols :refer :all]
 
-            [autodiff.protocols :as ad]))
+            ;; [autodiff.protocols :as ad]
+            ))
 
 
 
@@ -81,4 +82,39 @@
 
     (testing "(f.g)(x) = f comp g where x = 0.5"
       (is (= (->Dual 23.25 27.0) ((comp f g) (->Dual 0.5 1)))))
+    ))
+
+
+(defn approx? [a b]
+  (and
+    (< a (clojure.core/+ b 0.0001))
+    (> a (clojure.core/- b 0.0001))))
+
+;; Needed ops
+(deftest tf-ops
+  (let [f ; f(x) = 4x^2 + 3
+        (fn [x] (+ (* (* x x) 4) 3))
+        g ; g(x) = -2x^3 - 2
+        (fn [x] (+ -2 (* -2 (reduce * (repeat 3 x)))))
+        ]
+
+    (testing "Const op"
+      (is (= 0
+           (d constant 1)))
+      (is (= 2
+             (d add (constant 1) (constant 1))))
+      (is (= 1
+             (d add (->Dual (constant 1) 0) (constant 1))))
+      (is (= 1
+             (d add (constant 1) (->Dual (constant 1) 0))))
+      )
+
+    (testing "Pow op"
+      (let [x (constant 3)
+            y (constant 2)
+            z (pow x y)]
+        (is (approx? 6.0
+              (d pow x (coerce y))))
+        (is (approx? 9.88751
+              (d pow (coerce x) y)))))
     ))
