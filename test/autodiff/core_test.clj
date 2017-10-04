@@ -4,6 +4,8 @@
   (:require [clojure.test :refer :all]
             [autodiff.core :refer :all]
             [autodiff.protocols :refer :all]
+            [clojure.core.matrix :as m]
+            [clojure.core.matrix.operators :as mat]
 
             ;; [autodiff.protocols :as ad]
             ))
@@ -182,3 +184,70 @@
         (is (approx? 0.10499358 (d sigmoid y)))
         ))
     ))
+
+
+;; core.matrix
+(deftest core-matrix-grads
+  (extend-types
+   [clojure.lang.PersistentVector]
+
+   AutoDiff
+
+   (constant [a] a)
+   (add [a b]
+        (if (not (or (dual? a) (dual? b)))
+          (mat/+ a b)
+          (add (coerce a) (coerce b))))
+   (mul [a b]
+        (if (not (or (dual? a) (dual? b)))
+          (mat/* a b)
+          (mul (coerce a) (coerce b))))
+   (matmul [a b]
+        (if (and (m/array? a) (m/array? b))
+          (m/mmul a b)
+          (matmul (coerce a) (coerce b))))
+   (transpose [a] (m/transpose a))
+   ;; (sub [a b]
+   ;;      (if (and (number? a) (number? b))
+   ;;        (clojure.core/- a b)
+   ;;        (ad/sub (ad/coerce a) (ad/coerce b))))
+   ;; (mul [a b]
+   ;;      (if (and (number? a) (number? b))
+   ;;        (clojure.core/* a b)
+   ;;        (ad/mul (ad/coerce a) (ad/coerce b))))
+   ;; (div [a b]
+   ;;      (if (and (number? a) (number? b))
+   ;;        (clojure.core// a b)
+   ;;        (ad/mul (ad/coerce a) (ad/coerce b))))
+   ;; (pow [a b]
+   ;;      (if (and (number? a) (number? b))
+   ;;        (Math/pow a b)
+   ;;        (ad/pow (ad/coerce a) (ad/coerce b))))
+   ;; (log [a] (Math/log a))
+   ;; (tanh [a] (Math/tanh a))
+   ;; (exp [a] (Math/exp a))
+   ;; (sigmoid [a] (ad/div 1 (ad/add 1 (ad/pow (ad/exp 1) (ad/negate a)))))
+   ;; (negate [a] (clojure.core/- a))
+   ;; (sin [a] (Math/sin a))
+   ;; (cos [a] (Math/cos a))
+   ;; (pi [a] Math/PI)
+   (one [a] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) 1)))
+   (zero [a] (m/zero-array (m/shape a)))
+   ;; (two [a] 2.)
+   )
+
+  (let [a [[2 0] [0 2]]
+        b [[1 2] [3 4]]]
+
+    (testing "Basics"
+      (is (= [[2. 4.] [6. 8.]] (matmul a b)))
+
+      (is (= [[3. 7.] [3. 7.]]
+             (d matmul (coerce a (one a))
+                (coerce b (zero b)))))
+      (is (= [[2. 2.] [2. 2.]]
+             (d matmul (coerce a (zero a))
+                (coerce b (one b)))))
+      )
+    )
+  )

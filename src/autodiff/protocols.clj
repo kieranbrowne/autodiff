@@ -5,6 +5,7 @@
   (add [u v] "Add two values")
   (sub [u v] "Subtract two values")
   (mul [u v] "Multiply two values")
+  (matmul [u v] "Multiply two tensors")
   (negate [u] "Invert sign of value; ie -2 -> 2; 9.3 -> - 9.3")
   (abs [u])
   (signum [u])
@@ -28,6 +29,7 @@
   (cosh [u])
   (tanh [u])
   (asinh [u])
+  (transpose [u])
   (acosh [u])
   (atanh [u])
   (pow [u v] "Raise one value to the power of another")
@@ -73,6 +75,9 @@
   (mul [u v]
     (destruct-binary
       (Dual. (mul u v) (add (mul u' v) (mul u v')))))
+  (matmul [u v]
+    (destruct-binary
+     (Dual. (matmul u v) (add (matmul v' u) (transpose (matmul v u' ))))))
   (div [u v]
     (destruct-binary
      (Dual. (div u v) (div (sub (mul u' v) (mul u v')) (mul v v)))))
@@ -101,16 +106,20 @@
   (tanh [u]
     (destruct-unary
      (Dual. (tanh u) (mul u' (sub (one u) (pow (tanh u) (two u)))))))
+  (transpose [u]
+    (destruct-unary
+     (Dual. (transpose u) (zero u))))
   (sigmoid [u]
     (destruct-unary
      (Dual. (sigmoid u) (mul (sigmoid u) (sub u' (sigmoid u))))))
-  ;; (sigmoid [u]
-  ;;   (destruct-unary
-  ;;    (Dual. (sigmoid u) )))
   (pi [type-like] (Dual. (pi type-like) (zero type-like)))
   (zero [type-like] (Dual. (one type-like) (zero type-like)))
   (one [type-like] (Dual. (one type-like) (zero type-like)))
   (two [type-like] (Dual. (two type-like) (zero type-like)))
+  )
+
+(defn dual? [x]
+  (= (type x) autodiff.protocols.Dual)
   )
 
 
