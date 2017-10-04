@@ -92,11 +92,7 @@
 
 ;; Needed ops
 (deftest tf-ops
-  (let [f ; f(x) = 4x^2 + 3
-        (fn [x] (+ (* (* x x) 4) 3))
-        g ; g(x) = -2x^3 - 2
-        (fn [x] (+ -2 (* -2 (reduce * (repeat 3 x)))))
-        ]
+  (let []
 
     (testing "Const op"
       (is (= 0
@@ -109,10 +105,51 @@
              (d add (constant 1) (->Dual (constant 1) 0))))
       )
 
+    (testing "Add op"
+      (let [x (constant 3)
+            y (constant -2)]
+        (is (= 1 (add x y)))
+        (is (= 1 (add y x)))
+        (is (= 2 (d add y x)))
+        (is (= 1 (d add x (coerce y 0))))
+        (is (= 1 (d add (coerce x 0) y)))
+        ))
+
+    (testing "Sub op"
+      (let [x (constant 3)
+            y (constant -2)]
+        (is (= 5 (sub x y)))
+        (is (= -5 (sub y x)))
+        (is (= 0 (d sub y x)))
+        (is (= 1 (d sub x (coerce y 0))))
+        (is (= -1 (d sub (coerce x 0) y)))
+        ))
+
+    (testing "Mul op"
+      (let [x (constant 3)
+            y (constant -2)]
+        (is (= -6 (mul x y)))
+        (is (= -6 (mul y x)))
+        (is (= 1 (d mul y x)))
+        (is (= -2 (d mul x (coerce y 0))))
+        (is (= 3 (d mul (coerce x 0) y)))
+        ))
+
+    (testing "Div op"
+      (let [x (constant 3)
+            y (constant -2)]
+        (is (= -3/2 (div x y)))
+        (is (approx? -0.66666 (div y x)))
+        (is (= 5/9 (d div y x)))
+        (is (= -1/2 (d div x (coerce y 0))))
+        (is (= -3/4 (d div (coerce x 0) y)))
+        ))
+
     (testing "Pow op"
       (let [x (constant 3)
-            y (constant 2)
-            z (pow x y)]
+            y (constant 2)]
+        (is (approx? 9.0 (pow x y)))
+        (is (approx? 8.0 (pow y x)))
         (is (approx? 6.0
               (d pow x (coerce y))))
         (is (approx? 9.88751
