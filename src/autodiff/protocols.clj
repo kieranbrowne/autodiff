@@ -12,8 +12,11 @@
   (recip [u])
   (pi [type-like] "Return constant value of pi")
   (one [type-like] "Return constant value equivalent to 1")
+  (two [type-like] "Return constant value equivalent to 1")
+  (zero [type-like] "Return constant value equivalent to 1")
   (exp [u])
   (sqrt [u])
+  (sigmoid [u])
   (log [u])
   (sin [u])
   (cos [u])
@@ -34,11 +37,6 @@
 
 (defrecord Dual
     [f f'])
-
-(extend-type java.lang.Long
-  AutoDiff
-  (constant [a] a)
-  )
 
 (defn coerce
   "Makes value a Dual if not already"
@@ -88,13 +86,31 @@
                  (add (mul v' (log u))
                       (div (mul v u') u)
                       )))))
+  (exp [u]
+     (destruct-unary
+      (Dual. (exp u) (mul u' (exp u)))))
+  (sqrt [u]
+    (destruct-unary
+     (Dual. (sqrt u) (div u' (mul (sqrt u) (two u))))))
   (sin [u]
     (destruct-unary
      (Dual. (sin u) (mul u' (cos u)))))
   (cos [u]
     (destruct-unary
      (Dual. (cos u) (negate (mul u' (sin u))))))
-  (pi [type-like] (Dual. (pi type-like) 0))
+  (tanh [u]
+    (destruct-unary
+     (Dual. (tanh u) (mul u' (sub (one u) (pow (tanh u) (two u)))))))
+  (sigmoid [u]
+    (destruct-unary
+     (Dual. (sigmoid u) (mul (sigmoid u) (sub u' (sigmoid u))))))
+  ;; (sigmoid [u]
+  ;;   (destruct-unary
+  ;;    (Dual. (sigmoid u) )))
+  (pi [type-like] (Dual. (pi type-like) (zero type-like)))
+  (zero [type-like] (Dual. (one type-like) (zero type-like)))
+  (one [type-like] (Dual. (one type-like) (zero type-like)))
+  (two [type-like] (Dual. (two type-like) (zero type-like)))
   )
 
 

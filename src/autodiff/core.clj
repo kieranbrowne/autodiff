@@ -39,16 +39,26 @@
         (Math/pow a b)
         (ad/pow (ad/coerce a) (ad/coerce b))))
  (log [a] (Math/log a))
+ (tanh [a] (Math/tanh a))
+ (exp [a] (Math/exp a))
+ (sigmoid [a] (ad/div 1 (ad/add 1 (ad/pow (ad/exp 1) (ad/negate a)))))
  (negate [a] (clojure.core/- a))
  (sin [a] (Math/sin a))
  (cos [a] (Math/cos a))
+ (pi [a] Math/PI)
+ (one [a] 1.)
+ (two [a] 2.)
  )
 
+;; (Math/exp 1)
+
+;; (ad/sigmoid 9)
 
 ;; (ad/pow 2 2)
 
 ;; (ad/d ad/add 1 2)
-;; (ad/d ad/pow 3 2)
+(ad/d ad/pow (ad/coerce 3 1) (ad/coerce 2 0))
+;; (ad/pow 3 2)
 
 (let [x (ad/constant 4)
       y (ad/constant 8)

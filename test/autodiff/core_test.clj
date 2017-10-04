@@ -157,11 +157,28 @@
 
     (testing "Log op"
       (let [x (constant 3)
-            y (constant 2)
-            z (pow x y)]
+            y (constant 2)]
         (is (approx? 1.0986123 (log x)))
         (is (approx? 0.69314718 (log y)))
         (is (approx? 0.5 (d log y)))
         (is (approx? 0.3333333 (d log x)))
+        ))
+
+    (testing "Tanh op"
+      (let [x (constant 3.)
+            y (constant -2.)]
+        (is (approx? 0.99505472 (tanh x)))
+        (is (approx? -0.96402758 (tanh y)))
+        (is (approx? 0.0098661184 (d tanh x)))
+        (is (approx? 0.070650816 (d tanh y)))
+        ))
+
+    (testing "Sigmoid op"
+      (let [x (constant 3.)
+            y (constant -2.)]
+        (is (approx? 0.95257413 (sigmoid x)))
+        (is (approx? 0.11920292 (sigmoid y)))
+        (is (approx? 0.045176655 (d sigmoid x)))
+        (is (approx? 0.10499358 (d sigmoid y)))
         ))
     ))
