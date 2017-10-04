@@ -293,13 +293,6 @@
       (is (= 1 (run (d add (coerce a) b))))
       (is (= 1 (run (d add a (coerce b)))))
       (is (= 0 (run (d add (coerce a) (coerce b)))))
-
-      ; (is (= [[3. 7.] [3. 7.]]
-      ;        (d matmul (coerce a (one a))
-      ;           (coerce b (zero b)))))
-      ; (is (= [[2. 2.] [2. 2.]]
-      ;        (d matmul (coerce a (zero a))
-      ;           (coerce b (one b)))))
       )
     )
   )
