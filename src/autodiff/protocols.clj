@@ -15,6 +15,7 @@
   (one [type-like] "Return constant value equivalent to 1")
   (two [type-like] "Return constant value equivalent to 1")
   (zero [type-like] "Return constant value equivalent to 1")
+  (val-of-type [typed-thing v])
   (exp [u])
   (sqrt [u])
   (sigmoid [u])
@@ -43,8 +44,10 @@
 (defn coerce
   "Makes value a Dual if not already"
   ([x v]
-   (if (= (str (type x)) "class autodiff.protocols.Dual")
-     x (->Dual x (constant v))))
+   (case (str (type x))
+     "class autodiff.protocols.Dual" x
+     (->Dual x (val-of-type x v))
+     ))
   ([x] (coerce x 0)))
 
 (defmacro destruct-unary

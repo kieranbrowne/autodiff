@@ -6,6 +6,8 @@
             [autodiff.protocols :refer :all]
             [clojure.core.matrix :as m]
             [clojure.core.matrix.operators :as mat]
+            [clojure-tensorflow.ops :as tf]
+            [clojure-tensorflow.core :refer [run]]
 
             ;; [autodiff.protocols :as ad]
             ))
@@ -233,6 +235,7 @@
    ;; (pi [a] Math/PI)
    (one [a] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) 1)))
    (zero [a] (m/zero-array (m/shape a)))
+   (val-of-type [a v] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) v)))
    ;; (two [a] 2.)
    )
 
@@ -248,6 +251,55 @@
       (is (= [[2. 2.] [2. 2.]]
              (d matmul (coerce a (zero a))
                 (coerce b (one b)))))
+      )
+    )
+  )
+
+
+;; core.matrix
+(deftest clojure-tensorflow-grads
+  (extend-types
+   [org.tensorflow.Operation
+    org.tensorflow.Output]
+
+   AutoDiff
+
+   (constant [a] a)
+   (add [a b]
+        (if (not (or (dual? a) (dual? b)))
+          (tf/add a b)
+          (add (coerce a) (coerce b))))
+   (val-of-type [a v] (tf/constant v))
+   ; (mul [a b]
+   ;      (if (not (or (dual? a) (dual? b)))
+   ;        (mat/* a b)
+   ;        (mul (coerce a) (coerce b))))
+   ; (matmul [a b]
+   ;      (if (and (m/array? a) (m/array? b))
+   ;        (m/mmul a b)
+   ;        (matmul (coerce a) (coerce b))))
+   ; (transpose [a] (m/transpose a))
+   ; (one [a] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) 1)))
+   ; (zero [a] (m/zero-array (m/shape a)))
+   ;; (two [a] 2.)
+   )
+
+  (let [a (tf/constant [[2. 0.] [0. 2.]])
+        b (tf/constant [[1. 2.] [3. 4.]])]
+
+    (testing "Basics"
+      (is (= [[3. 2.] [3. 6.]] (run (add a b))))
+      (is (= 2 (run (d add a b))))
+      (is (= 1 (run (d add (coerce a) b))))
+      (is (= 1 (run (d add a (coerce b)))))
+      (is (= 0 (run (d add (coerce a) (coerce b)))))
+
+      ; (is (= [[3. 7.] [3. 7.]]
+      ;        (d matmul (coerce a (one a))
+      ;           (coerce b (zero b)))))
+      ; (is (= [[2. 2.] [2. 2.]]
+      ;        (d matmul (coerce a (zero a))
+      ;           (coerce b (one b)))))
       )
     )
   )
