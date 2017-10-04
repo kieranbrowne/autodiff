@@ -117,4 +117,14 @@
               (d pow x (coerce y))))
         (is (approx? 9.88751
               (d pow (coerce x) y)))))
+
+    (testing "Log op"
+      (let [x (constant 3)
+            y (constant 2)
+            z (pow x y)]
+        (is (approx? 1.0986123 (log x)))
+        (is (approx? 0.69314718 (log y)))
+        (is (approx? 0.5 (d log y)))
+        (is (approx? 0.3333333 (d log x)))
+        ))
     ))
