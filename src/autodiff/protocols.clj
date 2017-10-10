@@ -15,10 +15,10 @@
   (div [u v] "Divide one value by another")
   (recip [u])
   (pi [type-like] "Return constant value of pi")
-  (one [type-like] "Return constant value equivalent to 1")
-  (two [type-like] "Return constant value equivalent to 1")
-  (zero [type-like] "Return constant value equivalent to 1")
-  (val-of-type [typed-thing v])
+  (one [typed-thing] "Return constant value equivalent to 1")
+  (two [typed-thing] "Return constant value equivalent to 1")
+  (zero [typed-thing] "Return constant value equivalent to 1")
+  (val-like [typed-thing v])
   (exp [u])
   (sqrt [u])
   (sigmoid [u])
@@ -44,13 +44,14 @@
 (defrecord Dual
     [f f'])
 
+(defn dual? [x]
+  (= (type x) autodiff.protocols.Dual))
+
 (defn coerce
   "Makes value a Dual if not already"
   ([x v]
-   (case (str (type x))
-     "class autodiff.protocols.Dual" x
-     (->Dual x (val-of-type x v))
-     ))
+   (if (dual? x) x
+     (->Dual x (val-like x v))))
   ([x] (coerce x 0)))
 
 (defmacro destruct-unary
@@ -127,9 +128,6 @@
   (two [type-like] (Dual. (two type-like) (zero type-like)))
   )
 
-(defn dual? [x]
-  (= (type x) autodiff.protocols.Dual)
-  )
 
 
 (defn d

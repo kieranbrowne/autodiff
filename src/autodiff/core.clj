@@ -46,7 +46,7 @@
  (sin [a] (Math/sin a))
  (cos [a] (Math/cos a))
  (pi [a] Math/PI)
- (val-of-type [a v] v)
+ (val-like [a v] v)
  (one [a] 1.)
  (two [a] 2.)
  (identity [a] a)
