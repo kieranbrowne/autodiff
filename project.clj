@@ -1,6 +1,6 @@
-(defproject org.clojars.kieran/autodiff "0.1.2-SNAPSHOT"
+(defproject org.clojars.kieran/autodiff "0.1.3-SNAPSHOT"
   :description "Generic auto differentiation library for clojure"
-  :url "http://kieranbrowne.com/"
+  :url "https://github.com/kieranbrowne/autodiff"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]]

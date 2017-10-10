@@ -49,6 +49,7 @@
  (val-of-type [a v] v)
  (one [a] 1.)
  (two [a] 2.)
+ (identity [a] a)
  )
 
 ;; (Math/exp 1)

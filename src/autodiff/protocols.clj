@@ -1,7 +1,10 @@
-(ns autodiff.protocols)
+(ns autodiff.protocols
+  (:refer-clojure :exclude [identity])
+  )
 
 (defprotocol AutoDiff
   (constant [u] "Create a constant of value u")
+  (identity [u] "The function which returns itself")
   (add [u v] "Add two values")
   (sub [u v] "Subtract two values")
   (mul [u v] "Multiply two values")
@@ -69,6 +72,9 @@
   (constant [u]
     (destruct-unary
      (Dual. (constant u) (constant 0))))
+  (identity [u]
+    (destruct-unary
+     (Dual. (identity u) (identity u'))))
   (add [u v]
     (destruct-binary
       (Dual. (add u v) (add u' v'))))
