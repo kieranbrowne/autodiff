@@ -87,7 +87,7 @@
       (Dual. (mul u v) (add (mul u' v) (mul u v')))))
   (matmul [u v]
     (destruct-binary
-     (Dual. (matmul u v) (add (matmul u' v) (transpose (matmul u v' ))))))
+     (Dual. (matmul u v) (add (matmul u' v) (matmul u v' )))))
   (div [u v]
     (destruct-binary
      (Dual. (div u v) (div (sub (mul u' v) (mul u v')) (mul v v)))))
