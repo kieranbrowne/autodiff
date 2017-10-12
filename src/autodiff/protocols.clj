@@ -1,6 +1,6 @@
 (ns autodiff.protocols
   (:refer-clojure :exclude [identity])
-  )
+)
 
 (defprotocol AutoDiff
   (constant [u] "Create a constant of value u")
@@ -24,6 +24,7 @@
   (sigmoid [u])
   (log [u])
   (sin [u])
+  (sum [u])
   (cos [u])
   (tan [u])
   (asin [u])
@@ -87,7 +88,16 @@
       (Dual. (mul u v) (add (mul u' v) (mul u v')))))
   (matmul [u v]
     (destruct-binary
-     (Dual. (matmul u v) (add (matmul u' v) (matmul u v' )))))
+     (Dual. (matmul u v)
+            (add
+             (mul u
+              (transpose
+               (sum v')))
+             (mul
+              (transpose
+               (sum v))
+              u')))))
+            ;; (add (matmul u' v) (matmul u v')))))
   (div [u v]
     (destruct-binary
      (Dual. (div u v) (div (sub (mul u' v) (mul u v')) (mul v v)))))
@@ -118,7 +128,7 @@
      (Dual. (tanh u) (mul u' (sub (one u) (pow (tanh u) (two u)))))))
   (transpose [u]
     (destruct-unary
-     (Dual. (transpose u) (zero u))))
+     (Dual. (transpose u) (transpose u'))))
   (sigmoid [u]
     (destruct-unary
      (Dual. (sigmoid u) (mul (sigmoid u) (sub u' (sigmoid u))))))

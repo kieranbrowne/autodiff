@@ -1,5 +1,5 @@
 (ns autodiff.core-test
-  (:refer-clojure :exclude  [* + - /])
+  (:refer-clojure :exclude  [* + - / identity])
   ;; (:import [autodiff.core Dual])
   (:require [clojure.test :refer :all]
             [autodiff.core :refer :all]
@@ -160,12 +160,8 @@
               (d pow (coerce x) y)))))
 
     (testing "Log op"
-      (let [x (constant 3)
-            y (constant 2)]
-        (is (approx? 1.0986123 (log x)))
-        (is (approx? 0.69314718 (log y)))
-        (is (approx? 0.5 (d log y)))
-        (is (approx? 0.3333333 (d log x)))
+      (let [x (coerce 3 1.2)]
+        (is (= x (identity x)))
         ))
 
     (testing "Tanh op"
@@ -178,6 +174,15 @@
         ))
 
     (testing "Sigmoid op"
+      (let [x (constant 3.)
+            y (constant -2.)]
+        (is (approx? 0.95257413 (sigmoid x)))
+        (is (approx? 0.11920292 (sigmoid y)))
+        (is (approx? 0.045176655 (d sigmoid x)))
+        (is (approx? 0.10499358 (d sigmoid y)))
+        ))
+
+    (testing "Identity op"
       (let [x (constant 3.)
             y (constant -2.)]
         (is (approx? 0.95257413 (sigmoid x)))
@@ -233,9 +238,10 @@
    ;; (sin [a] (Math/sin a))
    ;; (cos [a] (Math/cos a))
    ;; (pi [a] Math/PI)
+   (sum [a] (reduce + a))
    (one [a] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) 1)))
    (zero [a] (m/zero-array (m/shape a)))
-   (val-of-type [a v] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) v)))
+   (val-like [a v] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) v)))
    ;; (two [a] 2.)
    )
 
@@ -269,7 +275,7 @@
         (if (not (or (dual? a) (dual? b)))
           (tf/add a b)
           (add (coerce a) (coerce b))))
-   (val-of-type [a v] (tf/constant v))
+   (val-like [a v] (tf/constant v))
    ; (mul [a b]
    ;      (if (not (or (dual? a) (dual? b)))
    ;        (mat/* a b)
