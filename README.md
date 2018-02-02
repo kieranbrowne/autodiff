@@ -4,7 +4,6 @@
 
 An attempt at auto diff.
 
-
 ## Usage
 
 ```clojure
@@ -13,6 +12,7 @@ An attempt at auto diff.
   (:require [autodiff.core :refer :all]
             [autodiff.protocols :refer :all]
             ))
+```
 
 ### Differentiation on simple expressions
 ```clojure
