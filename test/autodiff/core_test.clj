@@ -155,10 +155,10 @@
         (is (approx= 6.0 (d pow (wrt x) y)))
         (is (approx= 9.88751 (d pow x (wrt y))))))
 
-    (testing "Log op"
-      (let [x (coerce 3 1.2)]
-        (is (= x (identity x)))
-        ))
+    ;; (testing "Log op"
+    ;;   (let [x (coerce 3 1.2)]
+    ;;     (is (= x (identity x)))
+    ;;     ))
 
     (testing "Tanh op"
       (let [x (constant 3.)
@@ -200,9 +200,10 @@
   (let [a [[2. 0. 1.] [0. 2. 1.]]
         b [[1. 2. 3. 4.] [1. 2. 3. 4.] [1. 2. 3. 4.]]]
 
-    (matmul a b)
+    ;; (matmul (wrt a) b)
+    ;; (coerce a)
 
-    (d matmul (wrt a) b)
+    ;; (d matmul (wrt a) b)
 
 
     ;; (transpose
@@ -218,7 +219,7 @@
 
     ;; a
     ;; (wrt a)
-    (d matmul a (wrt b))
+    ;; (d matmul a (wrt b))
     ))
 
 ;; core.matrix
@@ -283,8 +284,8 @@
       (is (= [[3. 7.] [3. 7.]]
              (d matmul (wrt a) b)))
       (is (= [[2. 2.] [2. 2.]]
-             (d matmul (coerce a (zero a))
-                (coerce b (one b)))))
+             (d matmul (coerce a 0)
+                (coerce b 1))))
       ))
 
   (let [a [[2. 0. 1.] [0. 2. 1.]]
@@ -323,15 +324,16 @@
    (val-like [a v] (tf/add
                     (tf/mult a (tf/constant 0.))
                     (tf/constant (double v))))
-   ; (mul [a b]
-   ;      (if (not (or (dual? a) (dual? b)))
-   ;        (mat/* a b)
-   ;        (mul (coerce a) (coerce b))))
+   (mul [a b]
+        (if (not (or (dual? a) (dual? b)))
+          (tf/mult a b)
+          (mul (coerce a) (coerce b))))
    (matmul [a b]
            (if (and (is-tf? a) (is-tf? b))
           (tf/matmul a b)
           (matmul (coerce a) (coerce b))))
-   ; (transpose [a] (m/transpose a))
+   (transpose [a] (tf/transpose a))
+   (sum [a] (tf/sum a (tf/constant 1) false))
    (one [a] (val-like a 1))
    (zero [a] (val-like a 0))
    ;; (two [a] 2.)
@@ -355,10 +357,12 @@
       (is (= [[3. 6. 9. 12.] [3. 6. 9. 12.]] (run (matmul a b))))
 
       (is (= [[10. 10. 10.] [10. 10. 10.]]
-             (run (d matmul (->Dual a (one a)) b))))
+             (run (d matmul (wrt a) b))))
       (is (= [[2. 2. 2. 2.] [2. 2. 2. 2.] [2. 2. 2. 2.]]
              (run (d matmul a (wrt b)))))
       ))
   )
 
 ;; (coerce [1 2])
+
+;; (> (:order (->Dual 1 1)) 0)

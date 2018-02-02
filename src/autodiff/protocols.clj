@@ -48,12 +48,17 @@
 (defn dual? [x]
   (= (type x) autodiff.protocols.Dual))
 
+
 (defn coerce
   "Makes value a Dual if not already"
   ([x v]
    (if (dual? x) x
-     (->Dual x (val-like x v))))
+       (assoc
+        (->Dual x (val-like x v))
+        :order v
+        )))
   ([x] (coerce x 0)))
+
 
 (defmacro destruct-unary
   "Simpler let bindings for autodiff of Dual record type"
@@ -64,8 +69,8 @@
 (defmacro destruct-binary
   "Simpler let bindings for autodiff of Dual record type"
   [content]
-  `(let ~[{'u :f 'u' :f'} '(coerce u)
-          {'v :f 'v' :f'} '(coerce v)]
+  `(let ~[{'u :f 'u' :f' 'uorder :order} '(coerce u)
+          {'v :f 'v' :f' 'vorder :order} '(coerce v)]
      ~content))
 
 
@@ -90,12 +95,12 @@
     (destruct-binary
      (Dual. (matmul u v)
             ;; (if (shape u) u')
-            (cond ;(= (shape u) (shape v)) "fuck"
-              (= (one u) u') ; if with respect to u
-              (add (mul u (transpose (sum v')))
-                   (mul (transpose (sum v)) u'))
+            (cond
+              (> uorder 0) ; if with respect to u
+              (add (mul u (sum v'))
+                   (mul (sum v) u'))
 
-              (= (one v) v') ; if with respect to v
+              (> vorder 0) ; if with respect to v
               (transpose
                (add (mul (transpose v) (sum (transpose u')))
                     (mul (sum (transpose u)) (transpose v'))))
@@ -150,6 +155,7 @@
     (destruct-unary
      (Dual. (sigmoid u) (mul (sigmoid u) (sub u' (sigmoid u))))))
   (pi [type-like] (Dual. (pi type-like) (zero type-like)))
+  ;                    the `one` here seems weird
   (zero [type-like] (Dual. (one type-like) (zero type-like)))
   (one [type-like] (Dual. (one type-like) (zero type-like)))
   (two [type-like] (Dual. (two type-like) (zero type-like)))
