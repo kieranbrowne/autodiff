@@ -1,5 +1,6 @@
 # Auto Differentiation
 
+[![Clojars Project](https://img.shields.io/clojars/v/kieranbrowne/autodiff.svg)](https://clojars.org/kieranbrowne/autodiff)
 [![Build Status](https://travis-ci.org/kieranbrowne/autodiff.svg?branch=master)](https://travis-ci.org/kieranbrowne/autodiff)
 
 An attempt at auto diff.
