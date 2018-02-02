@@ -10,6 +10,20 @@
                          (into specs [type 'extend-type]))
                        ts)) 'do))
 
+(defn deep-map 
+  "Apply function recursively until nodes are values other than collections are reached"
+  [fn coll]
+  (if (coll? coll) 
+    (map (partial deep-map fn) coll) 
+    (fn coll)))
+
+(defn deep-mapv
+  "Apply function recursively until nodes are values other than collections are reached"
+  [fn coll]
+  (if (coll? coll) 
+    (mapv (partial deep-map fn) coll) 
+    (fn coll)))
+
 (extend-types
  [java.lang.Number
   java.lang.Long
@@ -49,8 +63,22 @@
  (val-like [a v] v)
  (one [a] 1.)
  (two [a] 2.)
- (identity [a] a)
- )
+ (identity [a] a))
+ 
+
+; (extend-types
+;  [clojure.lang.PersistantVector]
+
+;  AutoDiff
+
+;  (constant [a] a)
+;  (add [a b]
+;       (if (number? b)
+;         (deep-map (partial ad/add b) a)
+;         (deep-map)))
+;  (identity [a] a))
+ 
+
 
 ;; (Math/exp 1)
 
@@ -96,7 +124,6 @@
      (ad/sub a b)))
   ([a b & more]
    (reduce - (- a b) more)))
-
 
 
 (defn *

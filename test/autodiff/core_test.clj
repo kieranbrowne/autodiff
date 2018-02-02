@@ -14,7 +14,6 @@
 
 
 
-
 (deftest basic
   (testing "Simple quadratic"
     (is (= 6 (:f' (#(* % %) (->Dual 3 1)))))))
@@ -39,11 +38,10 @@
   (testing "derivative of constant"
     (is (= 0 (d constant 3))))
   (testing "derivative of add where one is variable"
-    (is (= 1 (d add 3 (->Dual 2 0)))))
+    (is (= 1 (d add 3 (->Dual 2 1)))))
   (testing "derivative of add (assumes both are variable)"
-    (is (= 2 (d add 3 2))))
+    (is (= 2 (d add (->Dual 3 1) (->Dual 2 1)))))
   )
-(d add 3 (->Dual 2 0))
 
 (deftest quadratics
   (let [f ; f(x) = 4x^2 + 3
@@ -89,7 +87,7 @@
     ))
 
 
-(defn approx? [a b]
+(defn approx= [a b]
   (and
     (< a (clojure.core/+ b 0.0001))
     (> a (clojure.core/- b 0.0001))))
@@ -101,11 +99,11 @@
     (testing "Const op"
       (is (= 0
            (d constant 1)))
-      (is (= 2
+      (is (= 0
              (d add (constant 1) (constant 1))))
-      (is (= 1
+      (is (= 0
              (d add (->Dual (constant 1) 0) (constant 1))))
-      (is (= 1
+      (is (= 0
              (d add (constant 1) (->Dual (constant 1) 0))))
       )
 
@@ -114,9 +112,9 @@
             y (constant -2)]
         (is (= 1 (add x y)))
         (is (= 1 (add y x)))
-        (is (= 2 (d add y x)))
-        (is (= 1 (d add x (coerce y 0))))
-        (is (= 1 (d add (coerce x 0) y)))
+        (is (= 2 (d add (wrt y) (wrt x))))
+        (is (= 1 (d add x (wrt y))))
+        (is (= 1 (d add (wrt x) y)))
         ))
 
     (testing "Sub op"
@@ -125,8 +123,8 @@
         (is (= 5 (sub x y)))
         (is (= -5 (sub y x)))
         (is (= 0 (d sub y x)))
-        (is (= 1 (d sub x (coerce y 0))))
-        (is (= -1 (d sub (coerce x 0) y)))
+        (is (= -1 (d sub x (wrt y))))
+        (is (= 1 (d sub (wrt x) y)))
         ))
 
     (testing "Mul op"
@@ -134,30 +132,28 @@
             y (constant -2)]
         (is (= -6 (mul x y)))
         (is (= -6 (mul y x)))
-        (is (= 1 (d mul y x)))
-        (is (= -2 (d mul x (coerce y 0))))
-        (is (= 3 (d mul (coerce x 0) y)))
+        (is (= 0 (d mul y x))) ; both are constant
+        (is (= 3 (d mul x (wrt y))))
+        (is (= -2 (d mul (wrt x) y)))
         ))
 
     (testing "Div op"
       (let [x (constant 3)
             y (constant -2)]
         (is (= -3/2 (div x y)))
-        (is (approx? -0.66666 (div y x)))
-        (is (= 5/9 (d div y x)))
-        (is (= -1/2 (d div x (coerce y 0))))
-        (is (= -3/4 (d div (coerce x 0) y)))
+        (is (approx= -0.66666 (div y x)))
+        (is (= 5/9 (d div (wrt y) (wrt x))))
+        (is (= -3/4 (d div x (wrt y))))
+        (is (= -1/2 (d div (wrt x) y)))
         ))
 
     (testing "Pow op"
       (let [x (constant 3)
             y (constant 2)]
-        (is (approx? 9.0 (pow x y)))
-        (is (approx? 8.0 (pow y x)))
-        (is (approx? 6.0
-              (d pow x (coerce y))))
-        (is (approx? 9.88751
-              (d pow (coerce x) y)))))
+        (is (approx= 9.0 (pow x y)))
+        (is (approx= 8.0 (pow y x)))
+        (is (approx= 6.0 (d pow (wrt x) y)))
+        (is (approx= 9.88751 (d pow x (wrt y))))))
 
     (testing "Log op"
       (let [x (coerce 3 1.2)]
@@ -167,31 +163,63 @@
     (testing "Tanh op"
       (let [x (constant 3.)
             y (constant -2.)]
-        (is (approx? 0.99505472 (tanh x)))
-        (is (approx? -0.96402758 (tanh y)))
-        (is (approx? 0.0098661184 (d tanh x)))
-        (is (approx? 0.070650816 (d tanh y)))
+        (is (approx= 0.99505472 (tanh x)))
+        (is (approx= -0.96402758 (tanh y)))
+        (is (approx= 0.0098661184 (d tanh (wrt x))))
+        (is (approx= 0.070650816 (d tanh (wrt y))))
         ))
 
     (testing "Sigmoid op"
       (let [x (constant 3.)
             y (constant -2.)]
-        (is (approx? 0.95257413 (sigmoid x)))
-        (is (approx? 0.11920292 (sigmoid y)))
-        (is (approx? 0.045176655 (d sigmoid x)))
-        (is (approx? 0.10499358 (d sigmoid y)))
+        (is (approx= 0.95257413 (sigmoid x)))
+        (is (approx= 0.11920292 (sigmoid y)))
+        (is (approx= 0.045176655 (d sigmoid (wrt x))))
+        (is (approx= 0.10499358 (d sigmoid (wrt y))))
         ))
 
     (testing "Identity op"
       (let [x (constant 3.)
             y (constant -2.)]
-        (is (approx? 0.95257413 (sigmoid x)))
-        (is (approx? 0.11920292 (sigmoid y)))
-        (is (approx? 0.045176655 (d sigmoid x)))
-        (is (approx? 0.10499358 (d sigmoid y)))
+        (is (approx= 0.95257413 (sigmoid x)))
+        (is (approx= 0.11920292 (sigmoid y)))
+        (is (approx= 0.045176655 (d sigmoid (wrt x))))
+        (is (approx= 0.10499358 (d sigmoid (wrt y))))
         ))
     ))
 
+(comment
+  (let [a [[2 0] [0 2]]
+        b [[1 2] [3 4]]]
+
+    (d matmul (wrt a) b)
+
+    ))
+
+(comment
+  (let [a [[2. 0. 1.] [0. 2. 1.]]
+        b [[1. 2. 3. 4.] [1. 2. 3. 4.] [1. 2. 3. 4.]]]
+
+    (matmul a b)
+
+    (d matmul (wrt a) b)
+
+
+    ;; (transpose
+    ;;  (mul (transpose b)
+    ;;       (transpose
+    ;;        (sum
+    ;;         (transpose
+    ;;          (:f' (wrt a)))))))
+
+    ;; (mul
+    ;;  (sum (transpose a))
+    ;;  (transpose b))
+
+    ;; a
+    ;; (wrt a)
+    (d matmul a (wrt b))
+    ))
 
 ;; core.matrix
 (deftest core-matrix-grads
@@ -214,6 +242,7 @@
           (m/mmul a b)
           (matmul (coerce a) (coerce b))))
    (transpose [a] (m/transpose a))
+   (shape [x])
    ;; (sub [a b]
    ;;      (if (and (number? a) (number? b))
    ;;        (clojure.core/- a b)
@@ -238,29 +267,45 @@
    ;; (sin [a] (Math/sin a))
    ;; (cos [a] (Math/cos a))
    ;; (pi [a] Math/PI)
-   (sum [a] (reduce + a))
+   (sum [a] (vec (map (partial reduce +) a)))
    (one [a] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) 1)))
    (zero [a] (m/zero-array (m/shape a)))
    (val-like [a v] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) v)))
    ;; (two [a] 2.)
    )
 
-  (let [a [[2 0] [0 2]]
-        b [[1 2] [3 4]]]
+  (let [a [[2. 0.] [0. 2.]]
+        b [[1. 2.] [3. 4.]]]
 
     (testing "Basics"
       (is (= [[2. 4.] [6. 8.]] (matmul a b)))
 
       (is (= [[3. 7.] [3. 7.]]
-             (d matmul (coerce a (one a))
-                (coerce b (zero b)))))
+             (d matmul (wrt a) b)))
       (is (= [[2. 2.] [2. 2.]]
              (d matmul (coerce a (zero a))
                 (coerce b (one b)))))
-      )
-    )
+      ))
+
+  (let [a [[2. 0. 1.] [0. 2. 1.]]
+        b [[1. 2. 3. 4.] [1. 2. 3. 4.] [1. 2. 3. 4.]]]
+
+    (testing "Basics"
+      (is (= [[3. 6. 9. 12.] [3. 6. 9. 12.]] (matmul a b)))
+
+      (is (= [[10. 10. 10.] [10. 10. 10.]]
+             (d matmul (wrt a) b)))
+      (is (= [[2. 2. 2. 2.] [2. 2. 2. 2.] [2. 2. 2. 2.]]
+             (d matmul a (wrt b))))
+      ))
   )
 
+(#{1 2} 0)
+
+(defn is-tf? [x]
+  (#{org.tensorflow.Operation
+     org.tensorflow.Output}
+   (type x)))
 
 ;; core.matrix
 (deftest clojure-tensorflow-grads
@@ -280,13 +325,13 @@
    ;      (if (not (or (dual? a) (dual? b)))
    ;        (mat/* a b)
    ;        (mul (coerce a) (coerce b))))
-   ; (matmul [a b]
-   ;      (if (and (m/array? a) (m/array? b))
-   ;        (m/mmul a b)
-   ;        (matmul (coerce a) (coerce b))))
+   (matmul [a b]
+           (if (and (is-tf? a) (is-tf? b))
+          (tf/matmul a b)
+          (matmul (coerce a) (coerce b))))
    ; (transpose [a] (m/transpose a))
-   ; (one [a] (m/to-nested-vectors (m/fill (m/new-array (m/shape a)) 1)))
-   ; (zero [a] (m/zero-array (m/shape a)))
+   (one [a] (tf/add (zero a) (tf/constant 1.)))
+   (zero [a] (tf/mult a (tf/constant 0.)))
    ;; (two [a] 2.)
    )
 
@@ -295,10 +340,24 @@
 
     (testing "Basics"
       (is (= [[3. 2.] [3. 6.]] (run (add a b))))
-      (is (= 2 (run (d add a b))))
-      (is (= 1 (run (d add (coerce a) b))))
-      (is (= 1 (run (d add a (coerce b)))))
-      (is (= 0 (run (d add (coerce a) (coerce b)))))
-      )
-    )
+      (is (= 0 (run (d add a b)))) ;; a and b are constant
+      (is (= 1 (run (d add (wrt a) b)))) ; add with respect to a
+      (is (= 1 (run (d add a (wrt b))))) ; add with respect to a
+      (is (= 2 (run (d add (wrt a) (wrt b))))) ; add with respect to a and b
+      ))
+
+  (let [a (tf/constant [[2. 0. 1.] [0. 2. 1.]])
+        b (tf/constant [[1. 2. 3. 4.] [1. 2. 3. 4.] [1. 2. 3. 4.]])]
+
+    (testing "Matrix multiplication"
+      (is (= [[3. 6. 9. 12.] [3. 6. 9. 12.]] (run (matmul a b))))
+
+      (is (= 1
+             (run (:f' (wrt a)))))
+
+      (is (= [[10. 10. 10.] [10. 10. 10.]]
+             (run (d matmul (->Dual a (one a)) b))))
+      (is (= [[2. 2. 2. 2.] [2. 2. 2. 2.] [2. 2. 2. 2.]]
+             (run (d matmul a (wrt b)))))
+      ))
   )

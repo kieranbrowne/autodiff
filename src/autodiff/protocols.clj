@@ -1,6 +1,5 @@
 (ns autodiff.protocols
-  (:refer-clojure :exclude [identity])
-)
+  (:refer-clojure :exclude [identity min max]))
 
 (defprotocol AutoDiff
   (constant [u] "Create a constant of value u")
@@ -21,6 +20,7 @@
   (val-like [typed-thing v])
   (exp [u])
   (sqrt [u])
+  (shape [u])
   (sigmoid [u])
   (log [u])
   (sin [u])
@@ -89,14 +89,28 @@
   (matmul [u v]
     (destruct-binary
      (Dual. (matmul u v)
-            (add
-             (mul u
+            ;; (if (shape u) u')
+            (cond ;(= (shape u) (shape v)) "fuck"
+              (= (one u) u') ; if with respect to u
+              (add (mul u (transpose (sum v')))
+                   (mul (transpose (sum v)) u'))
+
+              (= (one v) v') ; if with respect to v
               (transpose
-               (sum v')))
-             (mul
-              (transpose
-               (sum v))
-              u')))))
+               (add (mul (transpose v) (sum (transpose u')))
+                    (mul (sum (transpose u)) (transpose v'))))
+
+              true (throw (ex-info "Derivative must be with respect to something" {:u u :v v}))
+
+                  )
+            ;; [(add
+            ;;   (mul u (transpose (sum v')))
+            ;;   (mul (transpose (sum v)) u'))
+            ;;  (add
+            ;;   (mul u (transpose (sum v')))
+            ;;   (mul (transpose (sum v)) u'))
+            ;;  ]
+             )))
             ;; (add (matmul u' v) (matmul u v')))))
   (div [u v]
     (destruct-binary
@@ -120,6 +134,9 @@
   (sin [u]
     (destruct-unary
      (Dual. (sin u) (mul u' (cos u)))))
+  (sum [u]
+    (destruct-unary
+     (Dual. (sum u) (sum u'))))
   (cos [u]
     (destruct-unary
      (Dual. (cos u) (negate (mul u' (sin u))))))
@@ -136,11 +153,18 @@
   (zero [type-like] (Dual. (one type-like) (zero type-like)))
   (one [type-like] (Dual. (one type-like) (zero type-like)))
   (two [type-like] (Dual. (two type-like) (zero type-like)))
+  (val-like [typed-thing v] v)
   )
 
-
+(defn wrt
+  "'With Respect To'; sets the variable to count value"
+  ([x nth-deriv] (coerce x nth-deriv))
+  ([x] (coerce x 1)))
 
 (defn d
-  "Find the first derivative of a function"
+  "Find the derivative of a function.
+  All values are assumed to be constant.
+  Use the wrt function to make the arg add to resulting derivative.
+  "
   [f & args]
-  (:f' (apply f (map #(coerce % 1) args))))
+  (:f' (apply f (map #(coerce % 0) args))))
