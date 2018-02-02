@@ -107,7 +107,7 @@
               true
               (throw
                (ex-info "Derivative must be with respect to something"
-                        {:u u :v v :uorder vorder :v vorder}))
+                        {:u u :v v :uorder vorder :vorder vorder}))
 
                   )
              )))
