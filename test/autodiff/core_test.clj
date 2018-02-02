@@ -320,7 +320,9 @@
         (if (not (or (dual? a) (dual? b)))
           (tf/add a b)
           (add (coerce a) (coerce b))))
-   (val-like [a v] (tf/constant v))
+   (val-like [a v] (tf/add
+                    (tf/mult a (tf/constant 0.))
+                    (tf/constant (double v))))
    ; (mul [a b]
    ;      (if (not (or (dual? a) (dual? b)))
    ;        (mat/* a b)
@@ -330,8 +332,8 @@
           (tf/matmul a b)
           (matmul (coerce a) (coerce b))))
    ; (transpose [a] (m/transpose a))
-   (one [a] (tf/add (zero a) (tf/constant 1.)))
-   (zero [a] (tf/mult a (tf/constant 0.)))
+   (one [a] (val-like a 1))
+   (zero [a] (val-like a 0))
    ;; (two [a] 2.)
    )
 
@@ -340,10 +342,10 @@
 
     (testing "Basics"
       (is (= [[3. 2.] [3. 6.]] (run (add a b))))
-      (is (= 0 (run (d add a b)))) ;; a and b are constant
-      (is (= 1 (run (d add (wrt a) b)))) ; add with respect to a
-      (is (= 1 (run (d add a (wrt b))))) ; add with respect to a
-      (is (= 2 (run (d add (wrt a) (wrt b))))) ; add with respect to a and b
+      (is (= [[0. 0.] [0. 0.]] (run (d add a b)))) ;; a and b are constant
+      (is (= [[1. 1.] [1. 1.]] (run (d add (wrt a) b)))) ; add with respect to a
+      (is (= [[1. 1.] [1. 1.]] (run (d add a (wrt b))))) ; add with respect to a
+      (is (= [[2. 2.] [2. 2.]] (run (d add (wrt a) (wrt b))))) ; add with respect to a and b
       ))
 
   (let [a (tf/constant [[2. 0. 1.] [0. 2. 1.]])
@@ -352,12 +354,11 @@
     (testing "Matrix multiplication"
       (is (= [[3. 6. 9. 12.] [3. 6. 9. 12.]] (run (matmul a b))))
 
-      (is (= 1
-             (run (:f' (wrt a)))))
-
       (is (= [[10. 10. 10.] [10. 10. 10.]]
              (run (d matmul (->Dual a (one a)) b))))
       (is (= [[2. 2. 2. 2.] [2. 2. 2. 2.] [2. 2. 2. 2.]]
              (run (d matmul a (wrt b)))))
       ))
   )
+
+;; (coerce [1 2])
