@@ -94,7 +94,6 @@
   (matmul [u v]
     (destruct-binary
      (Dual. (matmul u v)
-            ;; (if (shape u) u')
             (cond
               (> uorder 0) ; if with respect to u
               (add (mul u (sum v'))
@@ -105,16 +104,12 @@
                (add (mul (transpose v) (sum (transpose u')))
                     (mul (sum (transpose u)) (transpose v'))))
 
-              true (throw (ex-info "Derivative must be with respect to something" {:u u :v v}))
+              true
+              (throw
+               (ex-info "Derivative must be with respect to something"
+                        {:u u :v v :uorder vorder :v vorder}))
 
                   )
-            ;; [(add
-            ;;   (mul u (transpose (sum v')))
-            ;;   (mul (transpose (sum v)) u'))
-            ;;  (add
-            ;;   (mul u (transpose (sum v')))
-            ;;   (mul (transpose (sum v)) u'))
-            ;;  ]
              )))
             ;; (add (matmul u' v) (matmul u v')))))
   (div [u v]
