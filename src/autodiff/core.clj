@@ -59,6 +59,7 @@
  (negate [a] (clojure.core/- a))
  (sin [a] (Math/sin a))
  (cos [a] (Math/cos a))
+ (transpose [a] a)
  (pi [a] Math/PI)
  (val-like [a v] v)
  (one [a] 1.)

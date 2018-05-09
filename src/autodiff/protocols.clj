@@ -1,5 +1,6 @@
 (ns autodiff.protocols
-  (:refer-clojure :exclude [identity min max]))
+  (:refer-clojure :exclude [identity min max])
+  (:require [clojure.core.matrix :as m]))
 
 (defprotocol AutoDiff
   (constant [u] "Create a constant of value u")
@@ -20,11 +21,11 @@
   (val-like [typed-thing v])
   (exp [u])
   (sqrt [u])
-  (shape [u])
   (sigmoid [u])
   (log [u])
   (sin [u])
-  (sum [u])
+  (sum [u dim] [u])
+  (mean [u])
   (cos [u])
   (tan [u])
   (asin [u])
@@ -34,6 +35,9 @@
   (cosh [u])
   (tanh [u])
   (asinh [u])
+  (shape [u])
+  (reshape [u shape])
+  (repeat [u n])
   (transpose [u])
   (acosh [u])
   (atanh [u])
@@ -73,6 +77,10 @@
           {'v :f 'v' :f' 'vorder :order} '(coerce v)]
      ~content))
 
+(assoc
+ (->Dual 1 1)
+ :x 1)
+
 
 (extend-type Dual
   AutoDiff
@@ -93,24 +101,55 @@
       (Dual. (mul u v) (add (mul u' v) (mul u v')))))
   (matmul [u v]
     (destruct-binary
-     (Dual. (matmul u v)
-            (cond
-              (> uorder 0) ; if with respect to u
-              (add (mul u (sum v'))
-                   (mul (sum v) u'))
+     (assoc
+      (Dual. (matmul u v)
+             (cond
+               (> uorder 0) ; if with respect to u
+               ;; u
+               (reshape
+                (repeat (sum v 1)
+                        (m/column-count v)
+                        )
+                (shape u'))
+               ;; (matmul
+               ;;  (mean u')
+               ;;  (mean u')
+               ;;  )
+               ;; (add (mul u (sum v'))
+               ;;      (mul (sum v) u'))
 
-              (> vorder 0) ; if with respect to v
-              (transpose
-               (add (mul (transpose v) (sum (transpose u')))
-                    (mul (sum (transpose u)) (transpose v'))))
+               (> vorder 0) ; if with respect to v
 
-              true
-              (throw
-               (ex-info "Derivative must be with respect to something"
-                        {:u u :v v :uorder vorder :vorder vorder}))
+               (reshape
+                (transpose
+                 (repeat
+                  (sum (transpose u) 1)
+                  (m/column-count v)
+                  ))
+                (shape v'))
+               ;; (vec
+               ;;  (repeat
+               ;;   (m/column-count b)
+               ;;   (sum b 1)))
+               ;; (transpose
+               ;;  (add (mul (transpose v) (sum (transpose u')))
+               ;;       (mul (sum (transpose u)) (transpose v'))))
 
-                  )
-             )))
+               true
+               (throw
+                (ex-info "Derivative must be with respect to something"
+                         {:u u :v v :uorder vorder :vorder vorder}))))
+      :order 1)
+      ;; :chain-fn
+      ;; (fn [f' g']
+      ;;   (matmul (reshape (mean f' 1) [2 -1])
+      ;;           (reshape (mean g' 0) [-1 4])))
+      ))
+
+
+
+
+
             ;; (add (matmul u' v) (matmul u v')))))
   (div [u v]
     (destruct-binary
@@ -123,8 +162,8 @@
      (Dual. (pow u v)
             (mul (pow u v)
                  (add (mul v' (log u))
-                      (div (mul v u') u)
-                      )))))
+                      (div (mul v u') u))))))
+
   (exp [u]
      (destruct-unary
       (Dual. (exp u) (mul u' (exp u)))))
@@ -134,9 +173,13 @@
   (sin [u]
     (destruct-unary
      (Dual. (sin u) (mul u' (cos u)))))
-  (sum [u]
-    (destruct-unary
-     (Dual. (sum u) (sum u'))))
+  (sum
+    ([u]
+     (destruct-unary
+      (Dual. (sum u) (sum u'))))
+    ([u dim]
+     (destruct-unary
+      (Dual. (sum u dim) (sum u' dim)))))
   (cos [u]
     (destruct-unary
      (Dual. (cos u) (negate (mul u' (sin u))))))
@@ -145,17 +188,17 @@
      (Dual. (tanh u) (mul u' (sub (one u) (pow (tanh u) (two u)))))))
   (transpose [u]
     (destruct-unary
-     (Dual. (transpose u) (transpose u'))))
+     (Dual. (transpose u) u')))
   (sigmoid [u]
     (destruct-unary
-     (Dual. (sigmoid u) (mul (sigmoid u) (sub u' (sigmoid u))))))
+     (Dual. (sigmoid u) (mul (sigmoid u) (sub (one u) (sigmoid u))))))
   (pi [type-like] (Dual. (pi type-like) (zero type-like)))
   ;                    the `one` here seems weird
   (zero [type-like] (Dual. (one type-like) (zero type-like)))
   (one [type-like] (Dual. (one type-like) (zero type-like)))
   (two [type-like] (Dual. (two type-like) (zero type-like)))
-  (val-like [typed-thing v] v)
-  )
+  (val-like [typed-thing v] v))
+
 
 (defn wrt
   "'With Respect To'; sets the variable to count value"
